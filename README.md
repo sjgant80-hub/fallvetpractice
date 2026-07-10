@@ -31,7 +31,7 @@ Run your veterinary practice finances and compliance from one HTML file. 10 tabs
 - **RCVS Code**: 10 chapters, CPD 35 hours/3 years, 24-hour OOH cover
 - **Misuse of Drugs Regulations 2001**: Schedule 2 bound register, safe custody, quarterly reconciliation
 - **Veterinary Medicines Regulations 2013**: prescribing cascade
-- **Professional indemnity**: minimum £5M recommended
+- **Professional indemnity**: minimum TBAM recommended
 - **Clinical records**: 7-year retention (RCVS Code Chapter 12)
 
 ---
