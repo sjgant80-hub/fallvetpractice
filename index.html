@@ -71,19 +71,22 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     'llama-3b':  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC',   size: '~2GB',   label: '3B · balanced · default · most laptops' },
     'qwen-7b':   { id: 'Qwen2.5-7B-Instruct-q4f16_1-MLC',     size: '~5GB',   label: '7B · capable · needs decent GPU (M-series Mac / 8GB+ VRAM)' },
     'llama-8b':  { id: 'Llama-3.1-8B-Instruct-q4f16_1-MLC',   size: '~5GB',   label: '8B · common · needs decent GPU' },
-    'llama-70b': { id: 'Llama-3.1-70B-Instruct-q4f16_1-MLC',  size: '~40GB',  label: '70B · frontier · needs serious GPU + 64GB+ RAM' }};
+    'llama-70b': { id: 'Llama-3.1-70B-Instruct-q4f16_1-MLC',  size: '~40GB',  label: '70B · frontier · needs serious GPU + 64GB+ RAM' },
+  };
   const DEFAULT_MODEL = 'llama-3b';
 
   const T3_PROVIDERS = {
     anthropic: { label: 'Anthropic Claude', models: ['claude-sonnet-4-5','claude-opus-4-7','claude-haiku-4-5'], default: 'claude-sonnet-4-5', url: 'https://api.anthropic.com/v1/messages' },
     openai:    { label: 'OpenAI',           models: ['gpt-4o','gpt-4o-mini','o1-mini'],                          default: 'gpt-4o-mini',      url: 'https://api.openai.com/v1/chat/completions' },
-    google:    { label: 'Google Gemini',    models: ['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash-exp'], default: 'gemini-1.5-flash', url: 'https://generativelanguage.googleapis.com/v1beta/models/' }};
+    google:    { label: 'Google Gemini',    models: ['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash-exp'], default: 'gemini-1.5-flash', url: 'https://generativelanguage.googleapis.com/v1beta/models/' },
+  };
 
   // ─── State ───────────────────────────────────────────────────────
   const STATE = {
     config: loadConfig(),
     ai: { ready: false, loading: false, progress: 0, engine: null, model: null },
-    mesh: { active: false, peers: new Map(), bc: null, signal: null }};
+    mesh: { active: false, peers: new Map(), bc: null, signal: null },
+  };
 
   function loadConfig() {
     try { return JSON.parse(localStorage.getItem('fall-kit.config') || '{}'); }
@@ -150,7 +153,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     if (tier === 'T2' && STATE.ai.ready && STATE.ai.engine) {
       const r = await STATE.ai.engine.chat.completions.create({
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
-        max_tokens: maxTokens});
+        max_tokens: maxTokens,
+      });
       return r.choices[0].message.content;
     }
     if (tier === 'T3' && STATE.config.api_key && STATE.config.api_provider) {
@@ -167,7 +171,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.anthropic.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model, max_tokens: maxTokens, system: sys, messages: [{ role: 'user', content: msg }] })});
+        body: JSON.stringify({ model, max_tokens: maxTokens, system: sys, messages: [{ role: 'user', content: msg }] }),
+      });
       if (!r.ok) throw new Error('Anthropic ' + r.status + ': ' + (await r.text()).slice(0, 200));
       const j = await r.json();
       return j.content[0].text;
@@ -176,7 +181,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.openai.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }] })});
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }] }),
+      });
       if (!r.ok) throw new Error('OpenAI ' + r.status);
       const j = await r.json();
       return j.choices[0].message.content;
@@ -185,7 +191,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.google.url + model + ':generateContent?key=' + encodeURIComponent(key), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: sys + '\n\n---\n\n' + msg }] }], generationConfig: { maxOutputTokens: maxTokens } })});
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: sys + '\n\n---\n\n' + msg }] }], generationConfig: { maxOutputTokens: maxTokens } }),
+      });
       if (!r.ok) throw new Error('Google ' + r.status);
       const j = await r.json();
       return j.candidates[0].content.parts[0].text;
@@ -426,7 +433,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     openMint: openMint,  // v1.2 · launch kcc-mint with this seed prefilled as parent
     MODELS: WEBLLM_MODELS,
     PROVIDERS: T3_PROVIDERS,
-    state: STATE};
+    state: STATE,
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -465,7 +473,8 @@ const RULES={
   cdReconcileWeeks:13,
   vatRate:0.20,
   indemnityMinCover:5000000,
-  dnaRateTarget:0.05};
+  dnaRateTarget:0.05,
+};
 
 let state={active:'dashboard',firm:null,appointments:[],revenue:[],drugs:[],cdRegister:[],staff:[],rcvsChecklist:[],expenses:[],audit:[],
   ui:{chat:[]},settings:{anthropicKey:'',auditChain:true}};
@@ -532,7 +541,8 @@ function renderRCVS(v){const checks=[
   {id:'ooh',name:'Out-of-hours cover arranged',cat:'Clinical',req:'RCVS Code Chapter 3. 24-hour emergency cover mandatory.'},
   {id:'waste',name:'Clinical waste disposal contract',cat:'Environment',req:'Environmental Protection Act 1990, Hazardous Waste Regulations 2005.'},
   {id:'radiation',name:'Ionising radiation protection (if applicable)',cat:'Safety',req:'IRR 2017 / IRMER 2017. RPA appointed, local rules, dosimetry.'},
-  {id:'hs',name:'Health & safety risk assessments',cat:'Safety',req:'HSWA 1974. COSHH, sharps, manual handling, lone working.'}];
+  {id:'hs',name:'Health & safety risk assessments',cat:'Safety',req:'HSWA 1974. COSHH, sharps, manual handling, lone working.'},
+];
   const done=state.rcvsChecklist||[];
   v.innerHTML=`<div class="section-h"><h2>RCVS Compliance</h2><div class="sub">${done.length}/${checks.length} complete</div></div><div class="check-grid">${checks.map(c=>{const isDone=done.includes(c.id);return `<div class="check-row ${isDone?'done':''}" onclick="toggleCheck('${c.id}')"><span class="mark">${isDone?'✓':'○'}</span><div><strong>${esc(c.name)}</strong><div style="font-size:11px;color:var(--cream-muted)">${esc(c.cat)} · ${esc(c.req)}</div></div></div>`}).join('')}</div>`}
 async function toggleCheck(id){if(!state.rcvsChecklist)state.rcvsChecklist=[];const idx=state.rcvsChecklist.indexOf(id);if(idx>=0)state.rcvsChecklist.splice(idx,1);else state.rcvsChecklist.push(id);await persistUI();await auditLog('rcvs.toggle',{payload:{id}});render()}
@@ -544,16 +554,17 @@ function renderPnL(v){const mRev=monthlyRevenue();const mDrug=monthlyDrugCost();
   v.innerHTML=`<div class="section-h"><h2>Practice P&L</h2><div class="sub">rolling 12 months</div></div>${allMonths.length?`<table><thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">Drug costs</th><th class="num">Expenses</th><th class="num">Net</th></tr></thead><tbody>${allMonths.map(m=>{const r=mRev[m]||0;const d=mDrug[m]||0;const e=mExp[m]||0;const n=r-d-e;tR+=r;tD+=d;tE+=e;return `<tr><td>${m}</td><td class="num">${fmt(r)}</td><td class="num">${fmt(d)}</td><td class="num">${fmt(e)}</td><td class="num" style="color:${n>=0?'var(--green)':'var(--red)'};">${fmt(n)}</td></tr>`}).join('')}<tr style="border-top:2px solid var(--brass);font-weight:700"><td>Total</td><td class="num">${fmt(tR)}</td><td class="num">${fmt(tD)}</td><td class="num">${fmt(tE)}</td><td class="num" style="color:${(tR-tD-tE)>=0?'var(--green)':'var(--red)'};">${fmt(tR-tD-tE)}</td></tr></tbody></table>`:'<div class="empty">No data yet.</div>'}`}
 
 const T0_QA=[
-  {q:/rcvs|register|conduct|code/i,a:'RCVS (Royal College of Veterinary Surgeons) regulates the veterinary profession under the Veterinary Surgeons Act 1966. Code of Professional Conduct: 10 chapters covering professional responsibility, 24-hour emergency cover, CPD (35 hours/3 years), clinical governance, informed consent, record keeping, referrals, insurance/indemnity, advertising, complaints. Practice Standards Scheme: voluntary accreditation (Core, GP, Hospital). Annual registration fee TBA. Fitness to Practise: disciplinary committee can warn, suspend, or remove from register.'},
+  {q:/rcvs|register|conduct|code/i,a:'RCVS (Royal College of Veterinary Surgeons) regulates the veterinary profession under the Veterinary Surgeons Act 1966. Code of Professional Conduct: 10 chapters covering professional responsibility, 24-hour emergency cover, CPD (35 hours/3 years), clinical governance, informed consent, record keeping, referrals, insurance/indemnity, advertising, complaints. Practice Standards Scheme: voluntary accreditation (Core, GP, Hospital). Annual registration fee £394. Fitness to Practise: disciplinary committee can warn, suspend, or remove from register.'},
   {q:/controlled.?drug|cd|schedule|register|ketamine|morphine/i,a:'Misuse of Drugs Regulations 2001 (as amended): Schedule 2 (ketamine, methadone, morphine, pethidine) — bound register, running balance, safe custody (BS2881 cabinet), annual stockcheck, destruction witnessed by authorised person, entries on day of transaction or next day. Schedule 3 (buprenorphine, midazolam) — safe custody, invoice records. Schedule 4 (diazepam, zolazepam) — invoices only. RCVS recommends quarterly reconciliation. Home Office inspections. Records retained 2 years from last entry.'},
   {q:/cpd|training|development|hours/i,a:'RCVS CPD requirement: 35 hours over a rolling 3-year period. All RCVS-registered vets must complete and record CPD. Framework: Plan, Do, Record, Reflect. Must include a mix of learning activities. Non-compliance: may trigger RCVS review. Vet nurses: 45 hours/3 years.'},
   {q:/consent|informed|authoris/i,a:'RCVS Code Chapter 11: obtain informed consent before treatment. Explain diagnosis, prognosis, options, risks, costs. Written consent for procedures under GA. Emergency exception: treat without consent if animal suffering and owner cannot be contacted. Under 16: parental consent. Non-owner: establish authority. Cost estimate and limit should be agreed.'},
   {q:/complaint|dispute|client/i,a:'RCVS Code Chapter 7: every practice must have a written complaints procedure. Must be accessible and displayed. Stages: internal resolution → RCVS if unresolved. Time limits apply. Keep records. VCMS (Veterinary Client Mediation Service) provides free mediation before RCVS formal complaint.'},
   {q:/out.?of.?hours|ooh|emergency|24.?hour/i,a:'RCVS Code Chapter 3: 24-hour emergency cover is mandatory. Options: practice provides OOH cover, or arrangement with another practice/dedicated OOH provider. Must inform clients of arrangements. Emergency triage can be by phone. Location must be within reasonable travel distance.'},
-  {q:/insurance|indemnity|cover/i,a:'RCVS Code Chapter 8: professional indemnity insurance is essential. Minimum TBAM recommended. Must cover all clinical activities. Locums: check own cover. Practice: ensure vicarious liability covered. Run-off cover needed after retirement/closure.'},
+  {q:/insurance|indemnity|cover/i,a:'RCVS Code Chapter 8: professional indemnity insurance is essential. Minimum £5M recommended. Must cover all clinical activities. Locums: check own cover. Practice: ensure vicarious liability covered. Run-off cover needed after retirement/closure.'},
   {q:/record|clinical|notes|retention/i,a:'RCVS Code Chapter 12: maintain adequate clinical records. Include: date, animal ID, owner, findings, treatment, medications, consent. SOAP format recommended. Minimum retention: 7 years. Digital records: must be backed up. Records belong to the practice. Client can request copies (fee chargeable).'},
   {q:/prescrib|dispens|cascade|off.?label/i,a:'Veterinary Medicines Regulations 2013: prescribing cascade — (1) UK authorised veterinary medicine for the species/condition, (2) UK vet medicine for another species/condition, (3) UK human medicine or EU vet medicine, (4) extemporaneous preparation. 7-day standard withdrawal for food animals on cascade. Records of all medicines dispensed. SAVSNET reporting encouraged.'},
-  {q:/waste|disposal|sharps|hazardous/i,a:'Environmental Protection Act 1990 / Hazardous Waste Regulations 2005: clinical waste must be segregated (colour-coded bags), stored securely, collected by licensed contractor. Sharps in BS7320 containers. Consignment notes for hazardous waste. Annual returns to Environment Agency. Cytotoxic/cytostatic waste: purple-lidded containers.'}];
+  {q:/waste|disposal|sharps|hazardous/i,a:'Environmental Protection Act 1990 / Hazardous Waste Regulations 2005: clinical waste must be segregated (colour-coded bags), stored securely, collected by licensed contractor. Sharps in BS7320 containers. Consignment notes for hazardous waste. Annual returns to Environment Agency. Cytotoxic/cytostatic waste: purple-lidded containers.'},
+];
 function askT0(q){for(const r of T0_QA){if(r.q.test(q))return {answer:r.a,source:'T0 · UK veterinary rules'}}return null}
 async function askT3(q){if(!state.settings.anthropicKey)return null;try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':state.settings.anthropicKey,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:'You are a UK veterinary practice management expert. RCVS, VSA 1966, controlled drugs, VMR 2013, animal welfare. Concise.\n\n'+q}]})});if(!res.ok)return null;const j=await res.json();return {answer:j.content?.[0]?.text,source:'T3 · Anthropic'}}catch(e){return null}}
 function renderQA(v){v.innerHTML=`<div class="section-h"><h2>Q & A</h2><div class="sub">T0 + T3 BYOK</div></div><div class="card" style="max-width:780px"><div class="chat" id="chatBox">${(state.ui.chat||[]).map(m=>`<div class="msg ${m.role}">${esc(m.text)}${m.source?`<div class="src">${esc(m.source)}</div>`:''}</div>`).join('')}</div><div class="chat-input"><input id="chatIn" placeholder="Ask… 'CD register rules?' · 'RCVS CPD requirements?' · 'prescribing cascade?'" onkeydown="if(event.key==='Enter')askQ()"><button class="btn brass" onclick="askQ()">Ask</button></div></div>`;const box=$('#chatBox');if(box)box.scrollTop=box.scrollHeight}
@@ -563,7 +574,7 @@ function openModal(type){const modal=$('#modal');modal.classList.add('open');
   if(type==='settings'){$('#modalTitle').textContent='Settings';$('#modalBody').innerHTML=`<div class="card"><h3>Practice</h3><div class="row"><div class="field"><label>Name</label><input id="fName" value="${esc(state.firm?.name||'')}"></div><div class="field"><label>RCVS Practice no</label><input id="fRcvs" value="${esc(state.firm?.rcvsNumber||'')}"></div></div><div class="field"><label>Address</label><input id="fAddr" value="${esc(state.firm?.address||'')}"></div><div class="row"><div class="field"><label>Phone</label><input id="fPhone" value="${esc(state.firm?.phone||'')}"></div><div class="field"><label>Email</label><input id="fEmail" value="${esc(state.firm?.email||'')}"></div></div></div><div class="card"><h3>API</h3><div class="field"><label>Anthropic key (T3)</label><input type="password" id="sKey" value="${esc(state.settings.anthropicKey||'')}"></div><div style="margin:10px 0"><label style="font-size:12px"><input type="checkbox" id="sAudit" ${state.settings.auditChain?'checked':''}> Audit chain</label></div></div><div class="actions"><button class="btn ghost sm" onclick="exportAll()">Export</button><button class="btn ghost sm" onclick="importAll()">Import</button><button class="btn danger sm" onclick="wipeAll()">Wipe</button><button class="btn brass" onclick="saveSettings()">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
   else if(type==='addAppt'){$('#modalTitle').textContent='Add Appointment';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="aDate"></div><div class="field"><label>Time</label><input type="time" id="aTime"></div></div><div class="row"><div class="field"><label>Client</label><input id="aClient"></div><div class="field"><label>Animal</label><input id="aAnimal"></div></div><div class="row"><div class="field"><label>Vet</label><input id="aVet"></div><div class="field"><label>Type</label><select id="aType"><option>consultation</option><option>vaccination</option><option>surgery</option><option>dental</option><option>follow-up</option><option>emergency</option></select></div></div><div class="row"><div class="field"><label>Fee £</label><input type="number" id="aFee" value="${RULES.consultFee}"></div><div class="field"><label>Status</label><select id="aStatus"><option>booked</option><option>attended</option><option>dna</option><option>cancelled</option></select></div></div><div class="actions"><button class="btn brass" onclick="addAppt()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
   else if(type==='addRevenue'){$('#modalTitle').textContent='Add Revenue';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="rDate"></div><div class="field"><label>Type</label><select id="rType"><option>consultation</option><option>vaccination</option><option>surgery</option><option>dental</option><option>lab</option><option>retail</option><option>other</option></select></div></div><div class="row"><div class="field"><label>Description</label><input id="rDesc"></div><div class="field"><label>Client</label><input id="rClient"></div></div><div class="field"><label>Amount £</label><input type="number" id="rAmt"></div><div class="actions"><button class="btn brass" onclick="addRevenue()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
-  else if(type==='addDrug'){$('#modalTitle').textContent='Add Drug Access';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="dDate"></div><div class="field"><label>Drug name</label><input id="dName"></div></div><div class="row"><div class="field"><label>Category</label><select id="dCat"><option>antibiotic</option><option>analgesic</option><option>anaesthetic</option><option>vaccine</option><option>anti-parasitic</option><option>NSAID</option><option>other</option></select></div><div class="field"><label>Supplier</label><input id="dSupp"></div></div><div class="row"><div class="field"><label>Quantity</label><input type="number" id="dQty"></div><div class="field"><label>Unit cost £</label><input type="number" step="0.01" id="dCost"></div></div><div class="actions"><button class="btn brass" onclick="addDrug()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
+  else if(type==='addDrug'){$('#modalTitle').textContent='Add Drug Purchase';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="dDate"></div><div class="field"><label>Drug name</label><input id="dName"></div></div><div class="row"><div class="field"><label>Category</label><select id="dCat"><option>antibiotic</option><option>analgesic</option><option>anaesthetic</option><option>vaccine</option><option>anti-parasitic</option><option>NSAID</option><option>other</option></select></div><div class="field"><label>Supplier</label><input id="dSupp"></div></div><div class="row"><div class="field"><label>Quantity</label><input type="number" id="dQty"></div><div class="field"><label>Unit cost £</label><input type="number" step="0.01" id="dCost"></div></div><div class="actions"><button class="btn brass" onclick="addDrug()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
   else if(type==='addCD'){$('#modalTitle').textContent='CD Register Entry';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="cdDate"></div><div class="field"><label>Drug</label><input id="cdDrug" placeholder="e.g. Ketamine 100mg/ml"></div></div><div class="row"><div class="field"><label>Schedule</label><select id="cdSch"><option value="2">Schedule 2</option><option value="3">Schedule 3</option></select></div><div class="field"><label>Direction</label><select id="cdDir"><option value="in">Received (in)</option><option value="out">Supplied/administered (out)</option></select></div></div><div class="row"><div class="field"><label>Quantity</label><input type="number" step="0.1" id="cdQty"></div><div class="field"><label>Running balance</label><input type="number" step="0.1" id="cdBal"></div></div><div class="row"><div class="field"><label>Animal</label><input id="cdAnimal"></div><div class="field"><label>Client</label><input id="cdClient"></div></div><div class="field"><label>Authorising vet</label><input id="cdVet"></div><div class="actions"><button class="btn brass" onclick="addCD()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
   else if(type==='addStaff'){$('#modalTitle').textContent='Add Staff';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Name</label><input id="stName"></div><div class="field"><label>Role</label><select id="stRole"><option>Veterinary surgeon</option><option>Vet nurse (RVN)</option><option>Locum vet</option><option>Practice manager</option><option>Receptionist</option><option>Student nurse</option></select></div></div><div class="row"><div class="field"><label>RCVS number</label><input id="stRcvs"></div><div class="field"><label>CPD hours (current period)</label><input type="number" id="stCpd" value="0"></div></div><div class="row"><div class="field"><label>Indemnity</label><select id="stInd"><option value="1">Yes</option><option value="0">No</option></select></div><div class="field"><label>DBS date</label><input type="date" id="stDbs"></div></div><div class="actions"><button class="btn brass" onclick="addStaff()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
   else if(type==='addExpense'){$('#modalTitle').textContent='Add Expense';$('#modalBody').innerHTML=`<div class="row"><div class="field"><label>Date</label><input type="date" id="eDate"></div><div class="field"><label>Category</label><select id="eCat"><option>rent</option><option>utilities</option><option>insurance</option><option>equipment</option><option>maintenance</option><option>marketing</option><option>IT</option><option>waste disposal</option><option>RCVS fees</option><option>CPD/training</option><option>other</option></select></div></div><div class="row"><div class="field"><label>Description</label><input id="eDesc"></div><div class="field"><label>Supplier</label><input id="eSupp"></div></div><div class="field"><label>Amount £</label><input type="number" step="0.01" id="eAmt"></div><div class="actions"><button class="btn brass" onclick="addExpense()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`}
@@ -589,7 +600,8 @@ async function seedDemo(){if(state.appointments.length||state.firm)return;
     {id:uid('st'),name:'Dr Emma Hartley',role:'Veterinary surgeon',rcvsNumber:'7891234',cpdHours:28,indemnity:true,dbsDate:'2025-03-15',ts:now(),isDemo:true},
     {id:uid('st'),name:'Dr James Okafor',role:'Veterinary surgeon',rcvsNumber:'7894567',cpdHours:38,indemnity:true,dbsDate:'2024-11-01',ts:now(),isDemo:true},
     {id:uid('st'),name:'Sophie Williams',role:'Vet nurse (RVN)',rcvsNumber:'RVN-22345',cpdHours:18,indemnity:true,dbsDate:'2025-06-10',ts:now(),isDemo:true},
-    {id:uid('st'),name:'Lucy Chen',role:'Receptionist',rcvsNumber:'',cpdHours:0,indemnity:false,dbsDate:'2025-01-20',ts:now(),isDemo:true}];
+    {id:uid('st'),name:'Lucy Chen',role:'Receptionist',rcvsNumber:'',cpdHours:0,indemnity:false,dbsDate:'2025-01-20',ts:now(),isDemo:true},
+  ];
   state.staff=staff;for(const s of staff)await idbPut('staff',s);
 
   const appts=[
@@ -598,7 +610,8 @@ async function seedDemo(){if(state.appointments.length||state.firm)return;
     {id:uid('ap'),date:'2026-06-18',time:'10:00',client:'Tom Edwards',animal:'Buddy (Spaniel)',vet:'Dr Okafor',type:'surgery',fee:420,status:'attended',ts:now(),isDemo:true},
     {id:uid('ap'),date:'2026-06-18',time:'10:30',client:'Karen White',animal:'Milo (Jack Russell)',vet:'Dr Hartley',type:'follow-up',fee:32,status:'dna',ts:now(),isDemo:true},
     {id:uid('ap'),date:'2026-06-19',time:'09:00',client:'Priya Patel',animal:'Cleo (Bengal)',vet:'Dr Okafor',type:'dental',fee:320,status:'attended',ts:now(),isDemo:true},
-    {id:uid('ap'),date:'2026-06-19',time:'11:00',client:'James Brown',animal:'Rex (GSD)',vet:'Dr Hartley',type:'consultation',fee:45,status:'attended',ts:now(),isDemo:true}];
+    {id:uid('ap'),date:'2026-06-19',time:'11:00',client:'James Brown',animal:'Rex (GSD)',vet:'Dr Hartley',type:'consultation',fee:45,status:'attended',ts:now(),isDemo:true},
+  ];
   state.appointments=appts;for(const a of appts)await idbPut('appointments',a);
 
   const revenue=[
@@ -608,7 +621,8 @@ async function seedDemo(){if(state.appointments.length||state.firm)return;
     {id:uid('rv'),date:'2026-06-19',type:'dental',description:'dental — Cleo (Bengal)',client:'Priya Patel',amount:320,ts:now(),isDemo:true},
     {id:uid('rv'),date:'2026-06-19',type:'consultation',description:'consultation — Rex (GSD)',client:'James Brown',amount:45,ts:now(),isDemo:true},
     {id:uid('rv'),date:'2026-06-15',type:'retail',description:'Flea/worm treatment x4',client:'Various',amount:89.60,ts:now(),isDemo:true},
-    {id:uid('rv'),date:'2026-06-10',type:'lab',description:'Blood panel x2',client:'Various',amount:156,ts:now(),isDemo:true}];
+    {id:uid('rv'),date:'2026-06-10',type:'lab',description:'Blood panel x2',client:'Various',amount:156,ts:now(),isDemo:true},
+  ];
   state.revenue=revenue;for(const r of revenue)await idbPut('revenue',r);
 
   const drugs=[
@@ -616,14 +630,16 @@ async function seedDemo(){if(state.appointments.length||state.firm)return;
     {id:uid('dr'),date:'2026-06-01',name:'Meloxicam 1.5mg/ml',category:'NSAID',supplier:'NVS',qty:20,unitCost:3.20,ts:now(),isDemo:true},
     {id:uid('dr'),date:'2026-06-01',name:'Nobivac DHPPi',category:'vaccine',supplier:'MSD',qty:50,unitCost:8.50,ts:now(),isDemo:true},
     {id:uid('dr'),date:'2026-06-01',name:'Isoflurane 250ml',category:'anaesthetic',supplier:'Zoetis',qty:4,unitCost:42.00,ts:now(),isDemo:true},
-    {id:uid('dr'),date:'2026-06-05',name:'Milbemax tablets',category:'anti-parasitic',supplier:'Elanco',qty:60,unitCost:2.80,ts:now(),isDemo:true}];
+    {id:uid('dr'),date:'2026-06-05',name:'Milbemax tablets',category:'anti-parasitic',supplier:'Elanco',qty:60,unitCost:2.80,ts:now(),isDemo:true},
+  ];
   state.drugs=drugs;for(const d of drugs)await idbPut('drugs',d);
 
   const cd=[
     {id:uid('cd'),date:'2026-06-01',drug:'Ketamine 100mg/ml 10ml',schedule:'2',direction:'in',qty:10,balance:10,animal:'',client:'',vet:'Dr Hartley',ts:now(),isDemo:true},
     {id:uid('cd'),date:'2026-06-18',drug:'Ketamine 100mg/ml 10ml',schedule:'2',direction:'out',qty:1,balance:9,animal:'Buddy',client:'Tom Edwards',vet:'Dr Okafor',ts:now(),isDemo:true},
     {id:uid('cd'),date:'2026-06-01',drug:'Buprenorphine 0.3mg/ml 10ml',schedule:'3',direction:'in',qty:5,balance:5,animal:'',client:'',vet:'Dr Hartley',ts:now(),isDemo:true},
-    {id:uid('cd'),date:'2026-06-18',drug:'Buprenorphine 0.3mg/ml 10ml',schedule:'3',direction:'out',qty:1,balance:4,animal:'Buddy',client:'Tom Edwards',vet:'Dr Okafor',ts:now(),isDemo:true}];
+    {id:uid('cd'),date:'2026-06-18',drug:'Buprenorphine 0.3mg/ml 10ml',schedule:'3',direction:'out',qty:1,balance:4,animal:'Buddy',client:'Tom Edwards',vet:'Dr Okafor',ts:now(),isDemo:true},
+  ];
   state.cdRegister=cd;for(const c of cd)await idbPut('cdRegister',c);
 
   const expenses=[
@@ -631,7 +647,8 @@ async function seedDemo(){if(state.appointments.length||state.firm)return;
     {id:uid('ex'),date:'2026-06-01',category:'insurance',description:'Practice insurance',supplier:'BVNA Insurance',amount:480,ts:now(),isDemo:true},
     {id:uid('ex'),date:'2026-06-01',category:'waste disposal',description:'Clinical waste collection',supplier:'Stericycle',amount:145,ts:now(),isDemo:true},
     {id:uid('ex'),date:'2026-06-15',category:'equipment',description:'Dental burr set replacement',supplier:'Henry Schein',amount:285,ts:now(),isDemo:true},
-    {id:uid('ex'),date:'2026-06-01',category:'RCVS fees',description:'PSS annual fee',supplier:'RCVS',amount:700,ts:now(),isDemo:true}];
+    {id:uid('ex'),date:'2026-06-01',category:'RCVS fees',description:'PSS annual fee',supplier:'RCVS',amount:700,ts:now(),isDemo:true},
+  ];
   state.expenses=expenses;for(const e of expenses)await idbPut('expenses',e);
 
   state.rcvsChecklist=['rcvsReg','cpd','indemnity','consent','ooh'];
